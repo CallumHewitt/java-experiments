@@ -5,6 +5,11 @@ server:
 
 spring:
   application.name: java-experiments
+  ai:
+    ollama:
+      chat:
+        options:
+          model: llama3
   webflux:
     base-path: /api
 
