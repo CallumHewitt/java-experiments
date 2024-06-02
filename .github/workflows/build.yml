@@ -1,5 +1,5 @@
 name: Build Native
-run-name: ${{github.actor}} triggered a native-build.
+run-name: ${{github.actor}} triggered a build.
 
 on:
   push:
@@ -7,7 +7,60 @@ on:
       - main
 
 jobs:
-  build:
+  build-jar:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout 'main'
+        uses: actions/checkout@v4
+
+      - name: Set up GraalVM
+        uses: graalvm/setup-graalvm@v1
+        with:
+          java-version: '21'
+          distribution: 'graalvm-community'
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+
+      - name: Build JAR
+        run: ./gradlew bootJar
+
+      - name: Determine version
+        run: echo "VERSION=$(./gradlew properties -q | grep "version:" | awk '{print $2}')" >> $GITHUB_ENV
+
+      - name: Publish JAR
+        uses: actions/upload-artifact@v4
+        with:
+          name: java-experiments.jar
+          path: build/libs/*.jar
+
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ env.VERSION }}
+          release_name: Release ${{ env.VERSION }}
+          draft: false
+          prerelease: false
+
+      - name: Upload JAR to Release
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: build/libs/*.jar
+          asset_name: java-experiments.jar
+          asset_content_type: application/java-archive
+
+  build-linux:
+    needs: [build-jar]
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -32,7 +85,65 @@ jobs:
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: java-experiments
+          name: java-experiments-linux
+          path: build/native/nativeCompile/java-experiments
+
+  build-macos:
+    needs: [build-jar]
+    runs-on: macOS-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout 'main'
+        uses: actions/checkout@v4
+
+      - name: Set up GraalVM
+        uses: graalvm/setup-graalvm@v1
+        with:
+          java-version: '21'
+          distribution: 'graalvm-community'
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+
+      - name: Build Native Image
+        run: ./gradlew nativeCompile
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: java-experiments-macOS
+          path: build/native/nativeCompile
+
+  build-windows:
+    needs: [build-jar]
+    runs-on: windows-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout 'main'
+        uses: actions/checkout@v4
+
+      - name: Set up GraalVM
+        uses: graalvm/setup-graalvm@v1
+        with:
+          java-version: '21'
+          distribution: 'graalvm-community'
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+
+      - name: Build Native Image
+        run: ./gradlew nativeCompile
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: java-experiments-x64.exe
           path: build/native/nativeCompile
 
   dependency-submission:

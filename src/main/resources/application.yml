@@ -1,4 +1,19 @@
-management.endpoints.web.exposure.include: auditevents,beans,conditions,configprops,env,health,heapdump,info,logfile,loggers,mappings,metrics,sessions,startup,threaddump
+management.endpoints.web.exposure.include:
+  - auditevents
+  - beans
+  - conditions
+  - configprops
+  - env
+  - health
+  - heapdump
+  - info
+  - logfile
+  - loggers
+  - mappings
+  - metrics
+  - sessions
+  - startup
+  - threaddump
 
 server:
   port: 1200
