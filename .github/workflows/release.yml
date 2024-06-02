@@ -1,0 +1,143 @@
+name: Release
+run-name: ${{github.actor}} triggered a release.
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  dependency-submission:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout 'main'
+        uses: actions/checkout@v4
+
+      - name: Set up GraalVM
+        uses: graalvm/setup-graalvm@v1
+        with:
+          java-version: '21'
+          distribution: 'graalvm-community'
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Generate and submit dependency graph
+        uses: gradle/actions/dependency-submission@v3
+
+  build-jar:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up GraalVM
+        uses: graalvm/setup-graalvm@v1
+        with:
+          java-version: '21'
+          distribution: 'graalvm-community'
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+
+      - name: Build JAR
+        run: ./gradlew bootJar
+
+      - name: Publish JAR
+        uses: actions/upload-artifact@v4
+        with:
+          name: java-experiments-jar
+          path: build/libs/java-experiments*.jar
+          if-no-files-found: error
+
+  build-linux:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout 'main'
+        uses: actions/checkout@v4
+
+      - name: Set up GraalVM
+        uses: graalvm/setup-graalvm@v1
+        with:
+          java-version: '21'
+          distribution: 'graalvm-community'
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+
+      - name: Build Native Image
+        run: ./gradlew nativeCompile
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: java-experiments-linux
+          path: build/native/nativeCompile/java-experiments*
+          if-no-files-found: error
+
+  build-macos:
+    runs-on: macOS-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout 'main'
+        uses: actions/checkout@v4
+
+      - name: Set up GraalVM
+        uses: graalvm/setup-graalvm@v1
+        with:
+          java-version: '21'
+          distribution: 'graalvm-community'
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+
+      - name: Build Native Image
+        run: ./gradlew nativeCompile
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: java-experiments-macOS
+          path: build/native/nativeCompile/java-experiments*
+          if-no-files-found: error
+
+  build-windows:
+    runs-on: windows-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout 'main'
+        uses: actions/checkout@v4
+
+      - name: Set up GraalVM
+        uses: graalvm/setup-graalvm@v1
+        with:
+          java-version: '21'
+          distribution: 'graalvm-community'
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+
+      - name: Build Native Image
+        run: ./gradlew nativeCompile
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: java-experiments-windows
+          path: build/native/nativeCompile/java-experiments*
+          if-no-files-found: error
