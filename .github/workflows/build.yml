@@ -10,10 +10,10 @@ jobs:
   build-jar:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
 
     steps:
-      - name: Checkout 'main'
+      - name: Checkout
         uses: actions/checkout@v4
 
       - name: Set up GraalVM
